@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<body>
+    <h1>Pergunte ao Gemini</h1>
+    <form id="chat-form">
+        <input type="text" id="pergunta" placeholder="Digite sua pergunta aqui..." required>
+        <button type="submit">Enviar</button>
+    </form>
+    <div id="resposta">A resposta aparecerá aqui...</div>
+
+    <script>
+        const form = document.getElementById('chat-form');
+        const perguntaInput = document.getElementById('pergunta');
+        const respostaDiv = document.getElementById('resposta');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const pergunta = perguntaInput.value;
+            respostaDiv.textContent = 'Pensando...';
+
+            try {
+                // MUDANÇA IMPORTANTE AQUI!
+                // A URL agora é um caminho relativo para a nossa função na Vercel.
+                const response = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: pergunta })
+                });
+
+                if (!response.ok) { throw new Error('Falha na resposta da API'); }
+
+                const data = await response.json();
+                respostaDiv.textContent = data.text;
+
+            } catch (error) {
+                console.error('Falha na comunicação:', error);
+                respostaDiv.textContent = 'Ocorreu um erro. Tente novamente.';
+            }
+            perguntaInput.value = '';
+        });
+    </script>
+</body>
+</html>
