@@ -68,16 +68,19 @@
                     body: formData
                 });
 
+                // Consome o corpo da resposta apenas uma vez
                 const responseBody = await response.text();
                 let data;
+                let erroApi = false;
                 try {
                     data = JSON.parse(responseBody);
                 } catch (jsonError) {
-                    throw new Error(responseBody || 'Resposta da API não é JSON');
+                    // Se não for JSON, mostra o texto puro como erro
+                    erroApi = true;
                 }
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Falha na resposta da API');
+                if (!response.ok || erroApi) {
+                    throw new Error((data && data.error) || responseBody || 'Falha na resposta da API');
                 }
 
                 respostaDiv.textContent = data.text;
