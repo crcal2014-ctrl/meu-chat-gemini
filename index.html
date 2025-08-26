@@ -1,44 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Parecer e Voto - CRCAL</title>
+    <style>
+        /* (Seu CSS pode continuar o mesmo ou ser melhorado) */
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        form { display: flex; flex-direction: column; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-weight: bold; }
+        input, button { padding: 10px; font-size: 1rem; }
+        #resposta { margin-top: 20px; white-space: pre-wrap; background-color: #f4f4f4; padding: 15px; border-radius: 5px; min-height: 100px; }
+        button { cursor: pointer; background-color: #007bff; color: white; border: none; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+    </style>
+</head>
 <body>
-    <h1>Pergunte ao Gemini</h1>
+    <h1>Gerador de Parecer e Voto - CRCAL</h1>
+    
     <form id="chat-form">
-        <input type="text" id="pergunta" placeholder="Digite sua pergunta aqui..." required>
-        <button type="submit">Enviar</button>
+        <div class="form-group">
+            <label for="processo-pdf">1. Anexe o arquivo PDF do processo:</label>
+            <input type="file" id="processo-pdf" accept=".pdf" required>
+        </div>
+
+        <div class="form-group">
+            <label for="pergunta">2. Digite uma instrução específica (opcional):</label>
+            <input type="text" id="pergunta" placeholder="Ex: Gerar o relatório, parecer e voto completo.">
+        </div>
+        
+        <button type="submit" id="submit-button">Gerar Documento</button>
     </form>
-    <div id="resposta">A resposta aparecerá aqui...</div>
+    
+    <div id="resposta">O documento gerado aparecerá aqui...</div>
 
     <script>
         const form = document.getElementById('chat-form');
         const perguntaInput = document.getElementById('pergunta');
+        const pdfInput = document.getElementById('processo-pdf');
         const respostaDiv = document.getElementById('resposta');
+        const submitButton = document.getElementById('submit-button');
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const pergunta = perguntaInput.value;
-            respostaDiv.textContent = 'Pensando...';
+            
+            const instrucao = perguntaInput.value;
+            const arquivoPdf = pdfInput.files[0];
+
+            if (!arquivoPdf) {
+                respostaDiv.textContent = 'Por favor, anexe um arquivo PDF do processo.';
+                return;
+            }
+
+            respostaDiv.textContent = 'Processando documentos e gerando o relatório... Isso pode levar um momento.';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Aguarde...';
+
+            // FormData é necessário para enviar arquivos
+            const formData = new FormData();
+            formData.append('instrucao', instrucao);
+            formData.append('pdf', arquivoPdf);
 
             try {
-                // MUDANÇA IMPORTANTE AQUI!
-                // A URL agora é um caminho relativo para a nossa função na Vercel.
                 const response = await fetch('/api/gemini', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ prompt: pergunta })
+                    body: formData // Não definimos 'Content-Type', o navegador faz isso por nós com FormData
                 });
 
-                if (!response.ok) { throw new Error('Falha na resposta da API'); }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Falha na resposta da API');
+                }
 
                 const data = await response.json();
                 respostaDiv.textContent = data.text;
 
             } catch (error) {
                 console.error('Falha na comunicação:', error);
-                respostaDiv.textContent = 'Ocorreu um erro. Tente novamente.';
+                respostaDiv.textContent = `Ocorreu um erro: ${error.message}`;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Gerar Documento';
             }
-            perguntaInput.value = '';
         });
     </script>
 </body>
