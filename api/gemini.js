@@ -61,7 +61,9 @@ export default async function handler(req, res) {
 // Função para processar o formulário de upload
 function parseForm(req) {
   return new Promise((resolve, reject) => {
-    const form = formidable({});
+    const form = formidable({
+      maxFileSize: 10 * 1024 * 1024 // Limite de 10 MB
+    });
     form.parse(req, (err, fields, files) => {
       if (err) reject(err);
       else resolve({ fields, files });
