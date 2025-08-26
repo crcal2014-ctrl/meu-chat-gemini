@@ -65,15 +65,22 @@
             try {
                 const response = await fetch('/api/gemini', {
                     method: 'POST',
-                    body: formData // Não definimos 'Content-Type', o navegador faz isso por nós com FormData
+                    body: formData
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Falha na resposta da API');
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    // Se não for JSON, mostra o texto puro
+                    const text = await response.text();
+                    throw new Error(text || 'Resposta da API não é JSON');
                 }
 
-                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Falha na resposta da API');
+                }
+
                 respostaDiv.textContent = data.text;
 
             } catch (error) {
